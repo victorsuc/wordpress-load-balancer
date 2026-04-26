@@ -80,6 +80,19 @@ services:
     networks:
       - wpnet
 
+  locust:
+    image: locustio/locust
+    container_name: locust
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./locust:/mnt/locust
+    command: -f /mnt/locust/locustfile.py --host=http://nginx
+    depends_on:
+      - nginx
+    networks:
+      - wpnet
+
 networks:
   wpnet: 
     driver: bridge 
