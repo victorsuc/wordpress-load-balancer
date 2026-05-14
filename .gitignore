@@ -1,2 +1,5 @@
+.DS_Store
 html/
 mysql_data/
+locust/__pycache__/
+locust/reports/*.html
