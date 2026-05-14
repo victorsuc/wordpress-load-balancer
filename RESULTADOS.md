@@ -277,3 +277,168 @@ De forma geral, para a página média, aumentar de 1 para 2 ou 3 containers não
 Comparando a página média com 3 containers contra a página pequena com 2 containers, a página média apresentou maior custo em todas as cargas. Com `10` e `100` usuários, ambas não tiveram falhas, mas a página média teve tempos maiores: em `100` usuários, a média subiu de `123 ms` para `195 ms`, e o P95 subiu de `230 ms` para `360 ms`.
 
 Com `1000` usuários, a diferença foi mais forte. A página média com 3 containers teve taxa de falha de `46,74%`, contra `19,64%` da página pequena com 2 containers. Também teve menor throughput (`70,24 req/s` contra `84,74 req/s`) e maior P95 (`46.000 ms` contra `37.000 ms`). Isso reforça que o tamanho maior da página aumenta a pressão sobre a aplicação, mesmo com mais containers WordPress disponíveis.
+
+## Página grande
+
+Tamanho aproximado da resposta:
+
+```text
+1 MB
+```
+
+### 1 container WordPress
+
+| Usuários | Requests | Falhas | Falha % | Média | Mediana | P95 | Req/s | Tamanho médio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 0 | 0 | N/A | N/A | N/A | N/A | 0,00 | 0 bytes |
+| 100 | 16.367 | 0 | 0,00% | 306 ms | 270 ms | 540 ms | 54,57 | 1.078.664 bytes |
+| 1000 | 16.494 | 1.778 | 10,78% | 11.872 ms | 2.600 ms | 63.000 ms | 54,91 | 962.406 bytes |
+
+#### Análise
+
+O arquivo de resultado do teste com `10` usuários não registrou requisições (`Request Count = 0`). Por isso, esse resultado não deve ser usado na análise comparativa e precisa ser reexecutado para gerar dados válidos.
+
+Com `100` usuários simultâneos, a página grande foi atendida sem falhas. O tempo médio foi de `306 ms`, a mediana ficou em `270 ms` e o P95 ficou em `540 ms`.
+
+Com `1000` usuários simultâneos, a página grande apresentou degradação significativa. Foram registradas `1.778` falhas, com taxa de falha de `10,78%`. O tempo médio subiu para `11.872 ms`, a mediana ficou em `2.600 ms` e o P95 chegou a `63.000 ms`.
+
+### Comparativo entre páginas - 1 container WordPress
+
+| Usuários | Página | Requests | Falhas | Falha % | Média | P95 | Req/s | Tamanho médio |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | pequena | 1.300 | 0 | 0,00% | 55 ms | 80 ms | 6,40 | 85.279 bytes |
+| 10 | média | 1.898 | 0 | 0,00% | 79 ms | 110 ms | 6,33 | 523.285 bytes |
+| 10 | grande | 0 | 0 | N/A | N/A | N/A | 0,00 | 0 bytes |
+| 100 | pequena | 18.496 | 0 | 0,00% | 102 ms | 200 ms | 61,65 | 85.279 bytes |
+| 100 | média | 17.392 | 0 | 0,00% | 204 ms | 410 ms | 57,96 | 523.285 bytes |
+| 100 | grande | 16.367 | 0 | 0,00% | 306 ms | 540 ms | 54,57 | 1.078.664 bytes |
+| 1000 | pequena | 26.683 | 1.694 | 6,35% | 6.647 ms | 60.000 ms | 88,91 | 79.876 bytes |
+| 1000 | média | 19.688 | 1.878 | 9,54% | 9.803 ms | 62.000 ms | 65,49 | 473.386 bytes |
+| 1000 | grande | 16.494 | 1.778 | 10,78% | 11.872 ms | 63.000 ms | 54,91 | 962.406 bytes |
+
+#### Resumo observado
+
+Com `100` usuários simultâneos, as três páginas não apresentaram falhas com 1 container WordPress, mas o aumento do tamanho da resposta impactou diretamente a latência. A média subiu de `102 ms` na página pequena para `204 ms` na média e `306 ms` na grande. O P95 também cresceu na mesma direção: `200 ms`, `410 ms` e `540 ms`.
+
+Com `1000` usuários simultâneos, as três páginas apresentaram falhas e degradação de tempo de resposta. Conforme o tamanho da página aumentou, a taxa de falha e o tempo médio também aumentaram: a página pequena teve `6,35%` de falhas e média de `6.647 ms`, a média teve `9,54%` e `9.803 ms`, e a grande teve `10,78%` e `11.872 ms`.
+
+O throughput também caiu conforme a página ficou maior. Em `1000` usuários, a página pequena atingiu `88,91 req/s`, a média `65,49 req/s` e a grande `54,91 req/s`. Isso indica que o tamanho da resposta tem impacto direto na capacidade de vazão da aplicação.
+
+De forma geral, com 1 container WordPress, a página grande foi a mais pesada entre as três. Em carga moderada (`100` usuários), o sistema ainda conseguiu responder sem falhas, mas com maior latência. Em carga pesada (`1000` usuários), a página grande apresentou a pior combinação de tempo médio, P95 e throughput.
+
+### 2 containers WordPress
+
+| Usuários | Requests | Falhas | Falha % | Média | Mediana | P95 | Req/s | Tamanho médio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 1.890 | 0 | 0,00% | 94 ms | 89 ms | 130 ms | 6,30 | 1.078.664 bytes |
+| 100 | 15.762 | 0 | 0,00% | 379 ms | 310 ms | 900 ms | 52,52 | 1.078.664 bytes |
+| 1000 | 19.296 | 9.555 | 49,52% | 10.293 ms | 2.400 ms | 58.000 ms | 64,26 | 544.825 bytes |
+
+#### Análise
+
+Com `10` e `100` usuários simultâneos, a página grande com 2 containers foi atendida sem falhas. O teste com `10` usuários apresentou média de `94 ms` e P95 de `130 ms`. Com `100` usuários, a média subiu para `379 ms` e o P95 para `900 ms`.
+
+Com `1000` usuários simultâneos, houve degradação forte. Foram registradas `9.555` falhas, com taxa de falha de `49,52%`. O tempo médio ficou em `10.293 ms`, a mediana em `2.400 ms` e o P95 em `58.000 ms`.
+
+### Comparativo da página grande - 1 container contra 2 containers
+
+| Usuários | Containers | Requests | Falhas | Falha % | Média | P95 | Req/s | Tamanho médio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 1 | 0 | 0 | N/A | N/A | N/A | 0,00 | 0 bytes |
+| 10 | 2 | 1.890 | 0 | 0,00% | 94 ms | 130 ms | 6,30 | 1.078.664 bytes |
+| 100 | 1 | 16.367 | 0 | 0,00% | 306 ms | 540 ms | 54,57 | 1.078.664 bytes |
+| 100 | 2 | 15.762 | 0 | 0,00% | 379 ms | 900 ms | 52,52 | 1.078.664 bytes |
+| 1000 | 1 | 16.494 | 1.778 | 10,78% | 11.872 ms | 63.000 ms | 54,91 | 962.406 bytes |
+| 1000 | 2 | 19.296 | 9.555 | 49,52% | 10.293 ms | 58.000 ms | 64,26 | 544.825 bytes |
+
+#### Resumo observado
+
+O teste de `10` usuários com 1 container não registrou requisições, então a comparação para essa carga deve considerar apenas que o resultado de 2 containers foi válido e sem falhas.
+
+Com `100` usuários, a página grande não apresentou falhas em 1 ou 2 containers. No entanto, a configuração com 2 containers teve latência maior: a média subiu de `306 ms` para `379 ms`, e o P95 subiu de `540 ms` para `900 ms`. O throughput também caiu levemente, de `54,57 req/s` para `52,52 req/s`.
+
+Com `1000` usuários, o uso de 2 containers teve comportamento misto. A média caiu de `11.872 ms` para `10.293 ms`, o P95 caiu de `63.000 ms` para `58.000 ms`, e o throughput subiu de `54,91 req/s` para `64,26 req/s`. Porém, a taxa de falha aumentou de `10,78%` para `49,52%`, o que indica que a melhora de tempo e vazão veio acompanhada de uma quantidade muito maior de requisições falhando.
+
+### Comparativo entre páginas - 2 containers WordPress
+
+| Usuários | Página | Requests | Falhas | Falha % | Média | P95 | Req/s | Tamanho médio |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | pequena | 1.266 | 0 | 0,00% | 58 ms | 86 ms | 6,44 | 85.279 bytes |
+| 10 | média | 1.905 | 0 | 0,00% | 78 ms | 110 ms | 6,35 | 523.285 bytes |
+| 10 | grande | 1.890 | 0 | 0,00% | 94 ms | 130 ms | 6,30 | 1.078.664 bytes |
+| 100 | pequena | 18.221 | 0 | 0,00% | 123 ms | 230 ms | 60,74 | 85.279 bytes |
+| 100 | média | 17.381 | 0 | 0,00% | 204 ms | 400 ms | 57,93 | 523.285 bytes |
+| 100 | grande | 15.762 | 0 | 0,00% | 379 ms | 900 ms | 52,52 | 1.078.664 bytes |
+| 1000 | pequena | 25.449 | 4.997 | 19,64% | 7.791 ms | 37.000 ms | 84,74 | 69.012 bytes |
+| 1000 | média | 20.911 | 4.186 | 20,02% | 9.794 ms | 42.000 ms | 69,63 | 419.020 bytes |
+| 1000 | grande | 19.296 | 9.555 | 49,52% | 10.293 ms | 58.000 ms | 64,26 | 544.825 bytes |
+
+#### Resumo observado
+
+Com `10` usuários simultâneos, as três páginas foram atendidas sem falhas com 2 containers. A latência aumentou conforme o tamanho da página cresceu: a média foi de `58 ms` na pequena, `78 ms` na média e `94 ms` na grande. O P95 seguiu o mesmo comportamento: `86 ms`, `110 ms` e `130 ms`.
+
+Com `100` usuários simultâneos, nenhuma página apresentou falhas, mas a diferença de latência ficou mais expressiva. A página grande teve média de `379 ms`, contra `204 ms` da média e `123 ms` da pequena. O P95 da grande chegou a `900 ms`, mais que o dobro da média (`400 ms`) e quase quatro vezes o da pequena (`230 ms`).
+
+Com `1000` usuários simultâneos, as três páginas apresentaram falhas. A página pequena e a média tiveram taxas de falha próximas (`19,64%` e `20,02%`), enquanto a página grande subiu para `49,52%`. A página grande também teve o maior P95 (`58.000 ms`) e o menor throughput entre as três (`64,26 req/s`). Isso reforça que, com 2 containers, o aumento do tamanho da resposta tem impacto direto na latência, na taxa de falhas e na vazão sob carga pesada.
+
+### 3 containers WordPress
+
+| Usuários | Requests | Falhas | Falha % | Média | Mediana | P95 | Req/s | Tamanho médio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 1.884 | 0 | 0,00% | 93 ms | 88 ms | 120 ms | 6,28 | 1.078.664 bytes |
+| 100 | 15.809 | 0 | 0,00% | 374 ms | 320 ms | 750 ms | 52,68 | 1.078.664 bytes |
+| 1000 | 19.766 | 12.071 | 61,07% | 10.662 ms | 1.800 ms | 60.000 ms | 64,17 | 420.229 bytes |
+
+#### Análise
+
+Com `10` e `100` usuários simultâneos, a página grande com 3 containers foi atendida sem falhas. Em `10` usuários, a média ficou em `93 ms` e o P95 em `120 ms`. Em `100` usuários, a média subiu para `374 ms` e o P95 ficou em `750 ms`.
+
+Com `1000` usuários simultâneos, houve degradação severa. Foram registradas `12.071` falhas, com taxa de falha de `61,07%`. O tempo médio ficou em `10.662 ms`, a mediana em `1.800 ms` e o P95 em `60.000 ms`.
+
+### Comparativo da página grande - 1, 2 e 3 containers
+
+| Usuários | Containers | Requests | Falhas | Falha % | Média | P95 | Req/s | Tamanho médio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 1 | 0 | 0 | N/A | N/A | N/A | 0,00 | 0 bytes |
+| 10 | 2 | 1.890 | 0 | 0,00% | 94 ms | 130 ms | 6,30 | 1.078.664 bytes |
+| 10 | 3 | 1.884 | 0 | 0,00% | 93 ms | 120 ms | 6,28 | 1.078.664 bytes |
+| 100 | 1 | 16.367 | 0 | 0,00% | 306 ms | 540 ms | 54,57 | 1.078.664 bytes |
+| 100 | 2 | 15.762 | 0 | 0,00% | 379 ms | 900 ms | 52,52 | 1.078.664 bytes |
+| 100 | 3 | 15.809 | 0 | 0,00% | 374 ms | 750 ms | 52,68 | 1.078.664 bytes |
+| 1000 | 1 | 16.494 | 1.778 | 10,78% | 11.872 ms | 63.000 ms | 54,91 | 962.406 bytes |
+| 1000 | 2 | 19.296 | 9.555 | 49,52% | 10.293 ms | 58.000 ms | 64,26 | 544.825 bytes |
+| 1000 | 3 | 19.766 | 12.071 | 61,07% | 10.662 ms | 60.000 ms | 64,17 | 420.229 bytes |
+
+#### Resumo observado
+
+O teste de `10` usuários com 1 container não registrou requisições, então a comparação nessa carga fica restrita aos cenários com 2 e 3 containers. Neles, os resultados foram muito próximos: `94 ms` de média e `130 ms` de P95 com 2 containers, contra `93 ms` de média e `120 ms` de P95 com 3 containers.
+
+Com `100` usuários, nenhuma configuração apresentou falhas. A melhor latência foi observada com 1 container: média de `306 ms` e P95 de `540 ms`. Com 2 e 3 containers, os tempos ficaram maiores. A configuração com 3 containers melhorou em relação a 2 no P95 (`750 ms` contra `900 ms`), mas ainda ficou pior que 1 container.
+
+Com `1000` usuários, todas as configurações apresentaram falhas. O uso de 2 e 3 containers aumentou a vazão em relação a 1 container, mas também aumentou muito a taxa de falha. A falha subiu de `10,78%` com 1 container para `49,52%` com 2 containers e `61,07%` com 3 containers. O P95 melhorou levemente ao sair de 1 container (`63.000 ms`) para 2 (`58.000 ms`) e 3 (`60.000 ms`), mas essa melhora veio acompanhada de uma quantidade muito maior de falhas.
+
+De forma geral, para a página grande, adicionar containers não resultou em uma melhora global. Em carga moderada, 1 container teve melhor latência. Em carga pesada, 2 e 3 containers aumentaram a vazão e reduziram um pouco o P95, mas pioraram bastante a taxa de falha.
+
+### Comparativo entre páginas - 3 containers WordPress
+
+| Usuários | Página | Requests | Falhas | Falha % | Média | P95 | Req/s | Tamanho médio |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | pequena | 1.930 | 0 | 0,00% | 57 ms | 80 ms | 6,43 | 85.279 bytes |
+| 10 | média | 1.910 | 0 | 0,00% | 79 ms | 110 ms | 6,37 | 523.285 bytes |
+| 10 | grande | 1.884 | 0 | 0,00% | 93 ms | 120 ms | 6,28 | 1.078.664 bytes |
+| 100 | pequena | 18.271 | 0 | 0,00% | 119 ms | 230 ms | 60,90 | 85.279 bytes |
+| 100 | média | 17.472 | 0 | 0,00% | 195 ms | 360 ms | 58,24 | 523.285 bytes |
+| 100 | grande | 15.809 | 0 | 0,00% | 374 ms | 750 ms | 52,68 | 1.078.664 bytes |
+| 1000 | pequena | 19.799 | 3.762 | 19,00% | 9.497 ms | 44.000 ms | 65,89 | 69.537 bytes |
+| 1000 | média | 21.104 | 9.864 | 46,74% | 8.971 ms | 46.000 ms | 70,24 | 279.068 bytes |
+| 1000 | grande | 19.766 | 12.071 | 61,07% | 10.662 ms | 60.000 ms | 64,17 | 420.229 bytes |
+
+#### Resumo observado
+
+Com `10` usuários simultâneos, as três páginas foram atendidas sem falhas com 3 containers. A latência aumentou conforme o tamanho da página cresceu: a média foi de `57 ms` na pequena, `79 ms` na média e `93 ms` na grande. O P95 também cresceu: `80 ms`, `110 ms` e `120 ms`.
+
+Com `100` usuários simultâneos, nenhuma página apresentou falhas, mas o impacto do tamanho da página ficou mais evidente. A página grande teve média de `374 ms`, contra `195 ms` da média e `119 ms` da pequena. O P95 da grande chegou a `750 ms`, acima dos `360 ms` da média e dos `230 ms` da pequena.
+
+Com `1000` usuários simultâneos, todas as páginas apresentaram falhas. A taxa de falha aumentou conforme o tamanho da resposta cresceu: `19,00%` na pequena, `46,74%` na média e `61,07%` na grande. O P95 também seguiu essa tendência: `44.000 ms`, `46.000 ms` e `60.000 ms`. Isso mostra que, com 3 containers, a página grande foi a mais afetada em carga pesada.
+
+De forma geral, com 3 containers WordPress, o tamanho da página teve impacto claro no comportamento da aplicação. Em cargas leves e moderadas, o efeito apareceu principalmente na latência. Em carga pesada, apareceu também na taxa de falha e na queda de estabilidade.
